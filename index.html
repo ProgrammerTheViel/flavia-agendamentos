@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flavia Viel Agendamentos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset e configurações gerais */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #ff6b8b;
+            --secondary: #9d4edd;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4CAF50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 2rem auto 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: var(--gray);
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        /* Conteúdo das abas */
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Formulários */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-secondary {
+            background: var(--gray);
+        }
+        
+        /* Grade de horários */
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 1rem;
+        }
+        
+        .time-slot {
+            padding: 0.75rem;
+            text-align: center;
+            border: 2px solid var(--light-gray);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .time-slot:hover {
+            border-color: var(--primary);
+            background-color: rgba(255, 107, 139, 0.05);
+        }
+        
+        .time-slot.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .time-slot.booked {
+            background-color: var(--light-gray);
+            color: var(--gray);
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        
+        /* Lista de agendamentos */
+        .appointments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .appointment-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .appointment-info h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .appointment-time {
+            font-weight: 600;
+            color: var(--dark);
+            background: var(--light-gray);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-confirmed {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: var(--success);
+        }
+        
+        .status-pending {
+            background-color: rgba(255, 152, 0, 0.1);
+            color: var(--warning);
+        }
+        
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            color: var(--dark);
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .appointment-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .appointment-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .schedule-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-content {
+                padding: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Utilitários */
+        .text-center {
+            text-align: center;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1.5rem;
+        }
+        
+        .mt-3 {
+            margin-top: 1.5rem;
+        }
+        
+        .d-none {
+            display: none;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 5px solid var(--success);
+            color: var(--success);
+        }
+        
+        .alert-danger {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left: 5px solid var(--danger);
+            color: var(--danger);
+        }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-spa"></i>
+                <span>Flávia Viel Nail Design</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Tabs para navegação -->
+        <div class="tabs">
+            <div class="tab active" data-tab="client">Agendar Horário</div>
+            <div class="tab" data-tab="admin">Área Administrativa</div>
+        </div>
+
+        <!-- Conteúdo da aba do cliente -->
+        <div id="client-tab" class="tab-content active">
+            <h2 class="text-center mb-3">Agende seu horário</h2>
+            
+            <div id="success-message" class="alert alert-success d-none">
+                Agendamento realizado com sucesso! Você receberá uma confirmação em breve.
+            </div>
+            
+            <form id="booking-form">
+                <div class="form-group">
+                    <label for="client-name">Nome completo *</label>
+                    <input type="text" id="client-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-phone">Telefone *</label>
+                    <input type="tel" id="client-phone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="service-type">Serviço desejado *</label>
+                    <select id="service-type" required>
+                        <option value="">Selecione um serviço</option>
+                        <option value="mao">Mão</option>
+                        <option value="pe">Pé</option>
+                        <option value="pe_e_mao">Pé e Mão</option>
+                        <option value="esmaltacao">Esmaltação</option>
+                        <option value="alongamentos">Alongamentos</option>
+                        <option value="manutencao_gel">Manutenção unhas de gel</option>
+                        <option value="manutencao_fibra">Manutenção unhas de fibra</option>
+                        <option value="reposicao">Reposição de unha</option>
+                        <option value="esmaltacao_gel">Esmaltação em gel</option>
+                        <option value="banho_gel">Banho de gel</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="appointment-date">Data do agendamento *</label>
+                    <input type="date" id="appointment-date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horários disponíveis *</label>
+                    <div class="schedule-grid" id="time-slots">
+                        <!-- Os horários serão gerados dinamicamente via JavaScript -->
+                    </div>
+                    <input type="hidden" id="selected-time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Observações (opcional)</label>
+                    <textarea id="notes" rows="3" placeholder="Alguma preferência especial ou detalhe que devemos saber?"></textarea>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn">Confirmar Agendamento</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Conteúdo da aba administrativa -->
+        <div id="admin-tab" class="tab-content">
+            <h2 class="text-center mb-3">Área Administrativa</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3 id="total-appointments">0</h3>
+                    <p>Agendamentos hoje</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-clock"></i>
+                    <h3 id="pending-appointments">0</h3>
+                    <p>Pendentes</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3 id="total-clients">0</h3>
+                    <p>Clientes cadastrados</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h3>R$ <span id="total-revenue">0</span></h3>
+                    <p>Faturamento estimado</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="filter-date">Filtrar por data</label>
+                <input type="date" id="filter-date">
+            </div>
+            
+            <h3 class="mt-3">Agendamentos</h3>
+            <div class="appointments-list" id="admin-appointments-list">
+                <!-- Os agendamentos serão carregados dinamicamente via JavaScript -->
+            </div>
+            
+            <div class="text-center mt-3">
+                <button class="btn btn-secondary" id="logout-btn">Sair da área administrativa</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ========== CONFIGURAÇÃO FIREBASE ==========
+        // SUAS CONFIGURAÇÕES DO FIREBASE (SUBSTITUA COM AS SUAS)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDftdET7O41Sw2zlTdBsHd1enhYIot3FgQ",
+            authDomain: "flavia-agendamentos.firebaseapp.com",
+            projectId: "flavia-agendamentos",
+            storageBucket: "flavia-agendamentos.firebasestorage.app",
+            messagingSenderId: "803549936998",
+            appId: "1:803549936998:web:cfb7c67adeef088eed9ca7"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // ========== VARIÁVEIS GLOBAIS ==========
+        let appointments = [];
+        let currentUser = null;
+        
+        // ========== CONFIGURAÇÕES DO SISTEMA ==========
+        const availableTimes = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30", "18:00"];
+        const servicePrices = {
+            "mao": 35,
+            "pe": 40,
+            "pe_e_mao": 65,
+            "esmaltacao": 20,
+            "alongamentos": 185,
+            "manutencao_gel": 120,
+            "manutencao_fibra": 140,
+            "reposicao": 15,
+            "esmaltacao_gel": 80,
+            "banho_gel": 110
+        };
+        
+        // Dicionário para traduzir códigos de serviço para nomes amigáveis
+        const serviceNames = {
+            "mao": "Mão",
+            "pe": "Pé",
+            "pe_e_mao": "Pé e Mão",
+            "esmaltacao": "Esmaltação",
+            "alongamentos": "Alongamentos",
+            "manutencao_gel": "Manutenção unhas de gel",
+            "manutencao_fibra": "Manutenção unhas de fibra",
+            "reposicao": "Reposição de unha",
+            "esmaltacao_gel": "Esmaltação em gel",
+            "banho_gel": "Banho de gel"
+        };
+        
+        // Elementos DOM
+        const clientTab = document.getElementById('client-tab');
+        const adminTab = document.getElementById('admin-tab');
+        const tabs = document.querySelectorAll('.tab');
+        const bookingForm = document.getElementById('booking-form');
+        const timeSlotsContainer = document.getElementById('time-slots');
+        const selectedTimeInput = document.getElementById('selected-time');
+        const successMessage = document.getElementById('success-message');
+        const adminAppointmentsList = document.getElementById('admin-appointments-list');
+        const totalAppointmentsElement = document.getElementById('total-appointments');
+        const pendingAppointmentsElement = document.getElementById('pending-appointments');
+        const totalClientsElement = document.getElementById('total-clients');
+        const totalRevenueElement = document.getElementById('total-revenue');
+        const filterDateInput = document.getElementById('filter-date');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        // Data de hoje para o campo de data
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('appointment-date').min = today;
+        document.getElementById('appointment-date').value = today;
+        filterDateInput.value = today;
+        
+        // ========== FUNÇÕES FIREBASE ==========
+        
+        // Login automático para testes (remova em produção ou altere para seu login)
+        async function loginAutomatico() {
+            try {
+                // Tenta fazer login
+                const userCredential = await auth.signInWithEmailAndPassword(
+                    "flavia@studio.com", 
+                    "senha123"
+                );
+                currentUser = userCredential.user;
+                console.log("Login automático realizado como:", currentUser.email);
+                return true;
+            } catch (error) {
+                console.log("Sem login automático:", error.message);
+                return false;
+            }
+        }
+        
+        // Criar usuário padrão (execute apenas uma vez se precisar)
+        async function criarUsuarioPadrao() {
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(
+                    "flavia@studio.com", 
+                    "senha123"
+                );
+                console.log("Usuário criado:", userCredential.user.uid);
+                alert("Usuário criado com sucesso! Email: flavia@studio.com, Senha: senha123");
+            } catch (error) {
+                console.log("Usuário já existe ou erro:", error.message);
+            }
+        }
+        
+        // Salvar agendamento no Firestore
+        async function salvarAgendamentoNoFirestore(agendamento) {
+            try {
+                const docRef = await db.collection("agendamentos").add({
+                    clientName: agendamento.clientName,
+                    phone: agendamento.phone,
+                    service: agendamento.service,
+                    date: agendamento.date,
+                    time: agendamento.time,
+                    notes: agendamento.notes,
+                    status: 'pending',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log("Agendamento salvo com ID:", docRef.id);
+                return { success: true, id: docRef.id };
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // Carregar agendamentos do Firestore
+        async function carregarAgendamentosDoBanco() {
+            try {
+                const snapshot = await db.collection("agendamentos")
+                    .orderBy("criadoEm", "desc")
+                    .limit(100)
+                    .get();
+                
+                appointments = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    appointments.push({
+                        id: doc.id,
+                        clientName: data.clientName,
+                        phone: data.phone,
+                        service: data.service,
+                        date: data.date,
+                        time: data.time,
+                        notes: data.notes,
+                        status: data.status || 'pending',
+                        criadoEm: data.criadoEm ? data.criadoEm.toDate() : new Date()
+                    });
+                });
+                
+                console.log(`${appointments.length} agendamentos carregados`);
+                updateAdminDashboard();
+                loadAdminAppointments();
+                generateTimeSlots();
+                
+            } catch (error) {
+                console.error("Erro ao carregar agendamentos:", error);
+            }
+        }
+        
+        // Atualizar status do agendamento
+        async function atualizarStatusAgendamento(id, novoStatus) {
+            try {
+                await db.collection("agendamentos").doc(id).update({
+                    status: novoStatus,
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log(`Agendamento ${id} atualizado para ${novoStatus}`);
+                return true;
+            } catch (error) {
+                console.error("Erro ao atualizar:", error);
+                return false;
+            }
+        }
+        
+        // Excluir agendamento
+        async function excluirAgendamento(id) {
+            try {
+                await db.collection("agendamentos").doc(id).delete();
+                console.log(`Agendamento ${id} excluído`);
+                return true;
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                return false;
+            }
+        }
+        
+        // ========== FUNÇÕES DO SISTEMA ==========
+        
+        // Gerar slots de horário disponíveis
+        function generateTimeSlots() {
+            const selectedDate = document.getElementById('appointment-date').value;
+            
+            // Limpar container
+            timeSlotsContainer.innerHTML = '';
+            selectedTimeInput.value = '';
+            
+            // Obter agendamentos para a data selecionada
+            const bookedTimes = appointments
+                .filter(app => app.date === selectedDate)
+                .map(app => app.time);
+            
+            // Gerar botões para cada horário
+            availableTimes.forEach(time => {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = time;
+                
+                // Verificar se o horário está reservado
+                if (bookedTimes.includes(time)) {
+                    timeSlot.classList.add('booked');
+                    timeSlot.title = 'Horário já reservado';
+                } else {
+                    timeSlot.addEventListener('click', function() {
+                        // Remover seleção de todos os slots
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        
+                        // Selecionar este slot
+                        this.classList.add('selected');
+                        selectedTimeInput.value = time;
+                    });
+                }
+                
+                timeSlotsContainer.appendChild(timeSlot);
+            });
+        }
+        
+        // Atualizar dashboard administrativo
+        function updateAdminDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Agendamentos de hoje
+            const todayAppointments = appointments.filter(app => app.date === today);
+            totalAppointmentsElement.textContent = todayAppointments.length;
+            
+            // Agendamentos pendentes
+            const pendingAppointments = appointments.filter(app => app.status === 'pending');
+            pendingAppointmentsElement.textContent = pendingAppointments.length;
+            
+            // Total de clientes únicos
+            const uniqueClients = new Set(appointments.map(app => app.clientName)).size;
+            totalClientsElement.textContent = uniqueClients;
+            
+            // Faturamento estimado (considerando apenas os confirmados)
+            const confirmedAppointments = appointments.filter(app => app.status === 'confirmed');
+            let revenue = 0;
+            
+            confirmedAppointments.forEach(app => {
+                revenue += servicePrices[app.service] || 0;
+            });
+            
+            totalRevenueElement.textContent = revenue;
+        }
+        
+        // Carregar agendamentos na área administrativa
+        function loadAdminAppointments() {
+            const filterDate = filterDateInput.value;
+            
+            // Filtrar agendamentos pela data selecionada
+            const filteredAppointments = appointments.filter(app => 
+                !filterDate || app.date === filterDate
+            );
+            
+            // Limpar lista
+            adminAppointmentsList.innerHTML = '';
+            
+            if (filteredAppointments.length === 0) {
+                adminAppointmentsList.innerHTML = '<p class="text-center">Nenhum agendamento encontrado para esta data.</p>';
+                return;
+            }
+            
+            // Ordenar por data/horário
+            filteredAppointments.sort((a, b) => {
+                if (a.date === b.date) {
+                    return a.time.localeCompare(b.time);
+                }
+                return a.date.localeCompare(b.date);
+            });
+            
+            // Adicionar cada agendamento à lista
+            filteredAppointments.forEach(appointment => {
+                const appointmentCard = document.createElement('div');
+                appointmentCard.className = 'appointment-card';
+                
+                // Determinar cor do status
+                const statusText = appointment.status === 'confirmed' ? 'Confirmado' : 'Pendente';
+                const statusClass = appointment.status === 'confirmed' ? 'status-confirmed' : 'status-pending';
+                
+                // Formatar data
+                const dateObj = new Date(appointment.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // Obter nome do serviço
+                const serviceName = serviceNames[appointment.service] || appointment.service;
+                
+                appointmentCard.innerHTML = `
+                    <div class="appointment-info">
+                        <h4>${appointment.clientName}</h4>
+                        <p><strong>Serviço:</strong> ${serviceName}</p>
+                        <p><strong>Telefone:</strong> ${appointment.phone}</p>
+                        <p><strong>Data:</strong> ${formattedDate}</p>
+                        <span class="appointment-time">${appointment.time}</span>
+                        ${appointment.notes ? `<p class="mt-3"><strong>Observações:</strong> ${appointment.notes}</p>` : ''}
+                    </div>
+                    <div class="appointment-actions">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        <button class="btn" onclick="confirmAppointment('${appointment.id}')">Confirmar</button>
+                        <button class="btn btn-secondary" onclick="cancelAppointment('${appointment.id}')">Cancelar</button>
+                    </div>
+                `;
+                
+                adminAppointmentsList.appendChild(appointmentCard);
+            });
+        }
+        
+        // Funções globais para ações administrativas
+        window.confirmAppointment = async function(id) {
+            if (await atualizarStatusAgendamento(id, 'confirmed')) {
+                // Atualizar localmente
+                const index = appointments.findIndex(app => app.id === id);
+                if (index !== -1) {
+                    appointments[index].status = 'confirmed';
+                }
+                
+                updateAdminDashboard();
+                loadAdminAppointments();
+                alert('Agendamento confirmado com sucesso!');
+            } else {
+                alert('Erro ao confirmar agendamento');
+            }
+        };
+        
+        window.cancelAppointment = async function(id) {
+            if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
+                if (await excluirAgendamento(id)) {
+                    // Remover localmente
+                    appointments = appointments.filter(app => app.id !== id);
+                    
+                    updateAdminDashboard();
+                    loadAdminAppointments();
+                    generateTimeSlots();
+                    
+                    alert('Agendamento cancelado com sucesso!');
+                } else {
+                    alert('Erro ao cancelar agendamento');
+                }
+            }
+        };
+        
+        // Configurar listeners de eventos
+        function setupEventListeners() {
+            // Navegação entre abas
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Remover classe active de todas as abas
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Adicionar classe active à aba clicada
+                    this.classList.add('active');
+                    
+                    // Mostrar conteúdo correspondente
+                    if (tabId === 'client') {
+                        clientTab.classList.add('active');
+                        adminTab.classList.remove('active');
+                    } else {
+                        adminTab.classList.add('active');
+                        clientTab.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Envio do formulário de agendamento
+            bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const agendamento = {
+                    clientName: document.getElementById('client-name').value,
+                    phone: document.getElementById('client-phone').value,
+                    service: document.getElementById('service-type').value,
+                    date: document.getElementById('appointment-date').value,
+                    time: selectedTimeInput.value,
+                    notes: document.getElementById('notes').value
+                };
+                
+                // Validar horário selecionado
+                if (!agendamento.time) {
+                    alert('Por favor, selecione um horário disponível.');
+                    return;
+                }
+                
+                // Validar serviço selecionado
+                if (!agendamento.service) {
+                    alert('Por favor, selecione um serviço.');
+                    return;
+                }
+                
+                // Salvar no Firestore
+                const resultado = await salvarAgendamentoNoFirestore(agendamento);
+                
+                if (resultado.success) {
+                    // Adicionar à lista local
+                    appointments.push({
+                        id: resultado.id,
+                        ...agendamento,
+                        status: 'pending',
+                        criadoEm: new Date()
+                    });
+                    
+                    // Mostrar mensagem de sucesso
+                    successMessage.classList.remove('d-none');
+                    
+                    // Limpar formulário
+                    bookingForm.reset();
+                    document.getElementById('appointment-date').value = today;
+                    selectedTimeInput.value = '';
+                    
+                    // Atualizar slots e dashboard
+                    generateTimeSlots();
+                    updateAdminDashboard();
+                    
+                    // Rolar para o topo
+                    window.scrollTo(0, 0);
+                    
+                    // Esconder mensagem após 5 segundos
+                    setTimeout(() => {
+                        successMessage.classList.add('d-none');
+                    }, 5000);
+                } else {
+                    alert('Erro ao salvar agendamento: ' + resultado.error);
+                }
+            });
+            
+            // Filtro de data na área administrativa
+            filterDateInput.addEventListener('change', function() {
+                loadAdminAppointments();
+            });
+            
+            // Botão de logout
+            logoutBtn.addEventListener('click', function() {
+                // Voltar para a aba do cliente
+                tabs[0].click();
+            });
+            
+            // Mudança de data no agendamento
+            document.getElementById('appointment-date').addEventListener('change', function() {
+                generateTimeSlots();
+            });
+        }
+        
+        // ========== INICIALIZAÇÃO ==========
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar se usuário já está logado
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log("Usuário logado:", user.email);
+                    carregarAgendamentosDoBanco();
+                } else {
+                    console.log("Nenhum usuário logado");
+                    // Tentar login automático para facilitar testes
+                    loginAutomatico();
+                }
+            });
+            
+            // Configurar eventos
+            setupEventListeners();
+            
+            // Gerar horários disponíveis
+            generateTimeSlots();
+            
+            // Carregar dados iniciais
+            updateAdminDashboard();
+            loadAdminAppointments();
+        });
+
+        // ========== FUNÇÕES DE DEBUG ==========
+
+// // Testar conexão com Firebase
+// async function testarConexaoFirebase() {
+//     try {
+//         console.log("🔄 Testando conexão com Firebase...");
+        
+//         // Tentar uma operação simples
+//         const timestamp = firebase.firestore.Timestamp.now();
+//         console.log("✅ Firebase inicializado, timestamp:", timestamp);
+        
+//         // Testar Firestore
+//         const testRef = db.collection("teste_conexao").doc("teste");
+//         await testRef.set({
+//             teste: "conexao_ok",
+//             timestamp: timestamp
+//         });
+//         console.log("✅ Firestore funcionando - documento criado");
+        
+//         // Ler para confirmar
+//         const doc = await testRef.get();
+//         console.log("✅ Firestore leitura ok - dados:", doc.data());
+        
+//         return true;
+//     } catch (error) {
+//         console.error("❌ ERRO na conexão Firebase:", error);
+//         alert("ERRO de conexão: " + error.message);
+//         return false;
+//     }
+// }
+
+// // Testar autenticação
+// async function testarAutenticacao() {
+//     try {
+//         console.log("🔄 Testando autenticação...");
+        
+//         // Tentar login
+//         const userCredential = await auth.signInWithEmailAndPassword(
+//             "flavia@studio.com", 
+//             "senha123"
+//         );
+        
+//         console.log("✅ Autenticação OK - Usuário:", userCredential.user.email);
+//         currentUser = userCredential.user;
+//         return true;
+//     } catch (error) {
+//         console.error("❌ ERRO na autenticação:", error.message);
+        
+//         // Se erro for "user-not-found", criar usuário
+//         if (error.code === 'auth/user-not-found') {
+//             console.log("⚠️ Usuário não encontrado, tentando criar...");
+//             try {
+//                 const userCredential = await auth.createUserWithEmailAndPassword(
+//                     "flavia@studio.com", 
+//                     "senha123"
+//                 );
+//                 console.log("✅ Usuário criado com sucesso!");
+//                 currentUser = userCredential.user;
+//                 return true;
+//             } catch (createError) {
+//                 console.error("❌ ERRO ao criar usuário:", createError.message);
+//             }
+//         }
+        
+//         return false;
+//     }
+// }
+
+// // ========== INICIALIZAÇÃO ATUALIZADA ==========
+// document.addEventListener('DOMContentLoaded', async function() {
+//     console.log("🚀 Sistema iniciando...");
+    
+//     // 1. Testar conexão Firebase
+//     const conexaoOk = await testarConexaoFirebase();
+//     if (!conexaoOk) {
+//         alert("Falha na conexão com Firebase. Verifique o console (F12) para detalhes.");
+//         return;
+//     }
+    
+//     // 2. Testar/Criar autenticação
+//     const authOk = await testarAutenticacao();
+//     if (!authOk) {
+//         console.warn("⚠️ Autenticação falhou, continuando em modo leitura...");
+//     }
+    
+//     // 3. Configurar estado de autenticação
+//     auth.onAuthStateChanged((user) => {
+//         if (user) {
+//             currentUser = user;
+//             console.log("✅ Usuário autenticado:", user.email);
+//             carregarAgendamentosDoBanco();
+//         } else {
+//             console.log("ℹ️ Nenhum usuário autenticado");
+//             // Tentar login automático
+//             loginAutomatico();
+//         }
+//     });
+    
+//     // 4. Configurar eventos
+//     setupEventListeners();
+    
+//     // 5. Carregar dados iniciais
+//     generateTimeSlots();
+//     updateAdminDashboard();
+//     loadAdminAppointments();
+    
+//     console.log("✅ Sistema inicializado com sucesso!");
+// });
+    </script>
+</body>
+</html>
