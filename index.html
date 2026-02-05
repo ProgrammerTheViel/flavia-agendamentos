@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flavia Viel Agendamentos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         /* Reset e configurações gerais */
         * {
@@ -30,6 +31,7 @@
             background-color: #f5f5f5;
             color: var(--dark);
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .container {
@@ -57,6 +59,50 @@
         
         .logo i {
             font-size: 2rem;
+        }
+        
+        /* Login Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal h2 {
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            text-align: center;
+        }
+        
+        .error-message {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--danger);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--danger);
+            display: none;
         }
         
         /* Tabs */
@@ -93,6 +139,7 @@
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            min-height: 400px;
         }
         
         .tab-content.active {
@@ -137,6 +184,7 @@
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
             text-align: center;
+            text-decoration: none;
         }
         
         .btn:hover {
@@ -146,6 +194,10 @@
         
         .btn-secondary {
             background: var(--gray);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
         }
         
         /* Grade de horários */
@@ -238,6 +290,11 @@
         .status-pending {
             background-color: rgba(255, 152, 0, 0.1);
             color: var(--warning);
+        }
+        
+        .status-cancelled {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--danger);
         }
         
         /* Dashboard */
@@ -337,15 +394,56 @@
             border-left: 5px solid var(--danger);
             color: var(--danger);
         }
+        
+        .admin-access {
+            margin: 1rem auto;
+            text-align: center;
+        }
+        
+        .admin-access a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .admin-access a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--gray);
+            border-top: 1px solid var(--light-gray);
+            margin-top: 2rem;
+        }
     </style>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
 </head>
 <body>
+    <!-- Modal de Login -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal">
+            <h2>Acesso Administrativo</h2>
+            <div id="loginError" class="error-message"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" value="flavia@viel.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Senha</label>
+                    <input type="password" id="loginPassword" value="091981" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn" style="width: 100%">Entrar</button>
+                </div>
+                <div class="text-center">
+                    <button type="button" id="closeModal" class="btn-secondary" style="width: 100%">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <header>
         <div class="container">
             <div class="logo">
@@ -420,54 +518,76 @@
                     <button type="submit" class="btn">Confirmar Agendamento</button>
                 </div>
             </form>
+            
+            <div class="admin-access">
+                <p>É administrador? <a href="#" id="adminAccessLink">Acessar área administrativa</a></p>
+            </div>
         </div>
 
         <!-- Conteúdo da aba administrativa -->
         <div id="admin-tab" class="tab-content">
             <h2 class="text-center mb-3">Área Administrativa</h2>
             
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <i class="fas fa-calendar-check"></i>
-                    <h3 id="total-appointments">0</h3>
-                    <p>Agendamentos hoje</p>
+            <div id="adminDashboard" class="d-none">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-calendar-check"></i>
+                        <h3 id="total-appointments">0</h3>
+                        <p>Agendamentos hoje</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock"></i>
+                        <h3 id="pending-appointments">0</h3>
+                        <p>Pendentes</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3 id="total-clients">0</h3>
+                        <p>Clientes cadastrados</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>R$ <span id="total-revenue">0</span></h3>
+                        <p>Faturamento estimado</p>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-clock"></i>
-                    <h3 id="pending-appointments">0</h3>
-                    <p>Pendentes</p>
+                
+                <div class="form-group">
+                    <label for="filter-date">Filtrar por data</label>
+                    <input type="date" id="filter-date">
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <h3 id="total-clients">0</h3>
-                    <p>Clientes cadastrados</p>
+                
+                <h3 class="mt-3">Agendamentos</h3>
+                <div class="appointments-list" id="admin-appointments-list">
+                    <!-- Os agendamentos serão carregados dinamicamente via JavaScript -->
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <h3>R$ <span id="total-revenue">0</span></h3>
-                    <p>Faturamento estimado</p>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-danger" id="logout-btn">Sair da área administrativa</button>
                 </div>
             </div>
             
-            <div class="form-group">
-                <label for="filter-date">Filtrar por data</label>
-                <input type="date" id="filter-date">
-            </div>
-            
-            <h3 class="mt-3">Agendamentos</h3>
-            <div class="appointments-list" id="admin-appointments-list">
-                <!-- Os agendamentos serão carregados dinamicamente via JavaScript -->
-            </div>
-            
-            <div class="text-center mt-3">
-                <button class="btn btn-secondary" id="logout-btn">Sair da área administrativa</button>
+            <div id="loginRequired" class="text-center">
+                <p>Área restrita. Faça login para continuar.</p>
+                <button class="btn" id="openLoginModal">Fazer Login</button>
             </div>
         </div>
     </main>
 
+    <footer>
+        <div class="container">
+            <p>Flávia Viel Nail Design &copy; <span id="currentYear"></span></p>
+            <p>Sistema de Agendamentos Online</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
     <script>
         // ========== CONFIGURAÇÃO FIREBASE ==========
-        // SUAS CONFIGURAÇÕES DO FIREBASE (SUBSTITUA COM AS SUAS)
         const firebaseConfig = {
             apiKey: "AIzaSyDftdET7O41Sw2zlTdBsHd1enhYIot3FgQ",
             authDomain: "flavia-agendamentos.firebaseapp.com",
@@ -477,17 +597,13 @@
             appId: "1:803549936998:web:cfb7c67adeef088eed9ca7"
         };
 
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        
         // ========== VARIÁVEIS GLOBAIS ==========
         let appointments = [];
         let currentUser = null;
+        let isAdminAuthenticated = false;
         
         // ========== CONFIGURAÇÕES DO SISTEMA ==========
-        const availableTimes = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30", "18:00"];
+        const availableTimes = ["09:00", "09:30", "10:30", "12:00", "13:30", "15:00", "16:30", "18:00"];
         const servicePrices = {
             "mao": 35,
             "pe": 40,
@@ -501,7 +617,6 @@
             "banho_gel": 110
         };
         
-        // Dicionário para traduzir códigos de serviço para nomes amigáveis
         const serviceNames = {
             "mao": "Mão",
             "pe": "Pé",
@@ -515,62 +630,154 @@
             "banho_gel": "Banho de gel"
         };
         
-        // Elementos DOM
-        const clientTab = document.getElementById('client-tab');
-        const adminTab = document.getElementById('admin-tab');
-        const tabs = document.querySelectorAll('.tab');
-        const bookingForm = document.getElementById('booking-form');
-        const timeSlotsContainer = document.getElementById('time-slots');
-        const selectedTimeInput = document.getElementById('selected-time');
-        const successMessage = document.getElementById('success-message');
-        const adminAppointmentsList = document.getElementById('admin-appointments-list');
-        const totalAppointmentsElement = document.getElementById('total-appointments');
-        const pendingAppointmentsElement = document.getElementById('pending-appointments');
-        const totalClientsElement = document.getElementById('total-clients');
-        const totalRevenueElement = document.getElementById('total-revenue');
-        const filterDateInput = document.getElementById('filter-date');
-        const logoutBtn = document.getElementById('logout-btn');
+        // ========== INICIALIZAÇÃO DO FIREBASE ==========
+        let db, auth;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            console.log("Firebase inicializado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao inicializar Firebase:", error);
+            alert("Erro ao conectar com o banco de dados. Verifique sua conexão com a internet.");
+        }
         
-        // Data de hoje para o campo de data
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('appointment-date').min = today;
-        document.getElementById('appointment-date').value = today;
-        filterDateInput.value = today;
+        // ========== FUNÇÕES DO SISTEMA ==========
+        function generateTimeSlots() {
+            const selectedDate = document.getElementById('appointment-date').value;
+            const timeSlotsContainer = document.getElementById('time-slots');
+            const selectedTimeInput = document.getElementById('selected-time');
+            
+            if (!timeSlotsContainer || !selectedTimeInput) return;
+            
+            timeSlotsContainer.innerHTML = '';
+            selectedTimeInput.value = '';
+            
+            const bookedTimes = appointments
+                .filter(app => app.date === selectedDate && app.status !== 'cancelled')
+                .map(app => app.time);
+            
+            availableTimes.forEach(time => {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = time;
+                
+                if (bookedTimes.includes(time)) {
+                    timeSlot.classList.add('booked');
+                    timeSlot.title = 'Horário já reservado';
+                } else {
+                    timeSlot.addEventListener('click', function() {
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        selectedTimeInput.value = time;
+                    });
+                }
+                
+                timeSlotsContainer.appendChild(timeSlot);
+            });
+        }
+        
+        function updateAdminDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            const todayAppointments = appointments.filter(app => app.date === today && app.status !== 'cancelled');
+            document.getElementById('total-appointments').textContent = todayAppointments.length;
+            
+            const pendingAppointments = appointments.filter(app => app.status === 'pending');
+            document.getElementById('pending-appointments').textContent = pendingAppointments.length;
+            
+            const uniqueClients = new Set(appointments.map(app => app.clientName)).size;
+            document.getElementById('total-clients').textContent = uniqueClients;
+            
+            const confirmedAppointments = appointments.filter(app => app.status === 'confirmed');
+            let revenue = 0;
+            confirmedAppointments.forEach(app => {
+                revenue += servicePrices[app.service] || 0;
+            });
+            document.getElementById('total-revenue').textContent = revenue;
+        }
+        
+        function loadAdminAppointments() {
+            const adminAppointmentsList = document.getElementById('admin-appointments-list');
+            const filterDate = document.getElementById('filter-date')?.value;
+            
+            if (!adminAppointmentsList) return;
+            
+            const filteredAppointments = appointments.filter(app => 
+                (!filterDate || app.date === filterDate) && app.status !== 'cancelled'
+            );
+            
+            adminAppointmentsList.innerHTML = '';
+            
+            if (filteredAppointments.length === 0) {
+                adminAppointmentsList.innerHTML = '<p class="text-center">Nenhum agendamento encontrado para esta data.</p>';
+                return;
+            }
+            
+            filteredAppointments.sort((a, b) => {
+                if (a.date === b.date) return a.time.localeCompare(b.time);
+                return a.date.localeCompare(b.date);
+            });
+            
+            filteredAppointments.forEach(appointment => {
+                const appointmentCard = document.createElement('div');
+                appointmentCard.className = 'appointment-card';
+                
+                const statusText = appointment.status === 'confirmed' ? 'Confirmado' : 
+                                 appointment.status === 'cancelled' ? 'Cancelado' : 'Pendente';
+                const statusClass = appointment.status === 'confirmed' ? 'status-confirmed' : 
+                                  appointment.status === 'cancelled' ? 'status-cancelled' : 'status-pending';
+                
+                const dateObj = new Date(appointment.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const serviceName = serviceNames[appointment.service] || appointment.service;
+                const price = servicePrices[appointment.service] || 0;
+                
+                appointmentCard.innerHTML = `
+                    <div class="appointment-info">
+                        <h4>${appointment.clientName}</h4>
+                        <p><strong>Serviço:</strong> ${serviceName} - R$ ${price}</p>
+                        <p><strong>Telefone:</strong> ${appointment.phone}</p>
+                        <p><strong>Data:</strong> ${formattedDate}</p>
+                        <span class="appointment-time">${appointment.time}</span>
+                        ${appointment.notes ? `<p class="mt-3"><strong>Observações:</strong> ${appointment.notes}</p>` : ''}
+                    </div>
+                    <div class="appointment-actions">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        ${appointment.status !== 'confirmed' ? 
+                            `<button class="btn confirm-btn" data-id="${appointment.id}">Confirmar</button>` : ''}
+                        ${appointment.status !== 'cancelled' ? 
+                            `<button class="btn btn-secondary cancel-btn" data-id="${appointment.id}">Cancelar</button>` : ''}
+                    </div>
+                `;
+                
+                adminAppointmentsList.appendChild(appointmentCard);
+            });
+            
+            document.querySelectorAll('.confirm-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    confirmAppointment(id);
+                });
+            });
+            
+            document.querySelectorAll('.cancel-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    cancelAppointment(id);
+                });
+            });
+        }
         
         // ========== FUNÇÕES FIREBASE ==========
-        
-        // Login automático para testes (remova em produção ou altere para seu login)
-        async function loginAutomatico() {
-            try {
-                // Tenta fazer login
-                const userCredential = await auth.signInWithEmailAndPassword(
-                    "flavia@studio.com", 
-                    "senha123"
-                );
-                currentUser = userCredential.user;
-                console.log("Login automático realizado como:", currentUser.email);
-                return true;
-            } catch (error) {
-                console.log("Sem login automático:", error.message);
-                return false;
-            }
-        }
-        
-        // Criar usuário padrão (execute apenas uma vez se precisar)
-        async function criarUsuarioPadrao() {
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(
-                    "flavia@studio.com", 
-                    "senha123"
-                );
-                console.log("Usuário criado:", userCredential.user.uid);
-                alert("Usuário criado com sucesso! Email: flavia@studio.com, Senha: senha123");
-            } catch (error) {
-                console.log("Usuário já existe ou erro:", error.message);
-            }
-        }
-        
-        // Salvar agendamento no Firestore
         async function salvarAgendamentoNoFirestore(agendamento) {
             try {
                 const docRef = await db.collection("agendamentos").add({
@@ -579,7 +786,7 @@
                     service: agendamento.service,
                     date: agendamento.date,
                     time: agendamento.time,
-                    notes: agendamento.notes,
+                    notes: agendamento.notes || '',
                     status: 'pending',
                     criadoEm: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -587,12 +794,11 @@
                 console.log("Agendamento salvo com ID:", docRef.id);
                 return { success: true, id: docRef.id };
             } catch (error) {
-                console.error("Erro ao salvar:", error);
+                console.error("Erro ao salvar agendamento:", error);
                 return { success: false, error: error.message };
             }
         }
         
-        // Carregar agendamentos do Firestore
         async function carregarAgendamentosDoBanco() {
             try {
                 const snapshot = await db.collection("agendamentos")
@@ -610,23 +816,24 @@
                         service: data.service,
                         date: data.date,
                         time: data.time,
-                        notes: data.notes,
+                        notes: data.notes || '',
                         status: data.status || 'pending',
                         criadoEm: data.criadoEm ? data.criadoEm.toDate() : new Date()
                     });
                 });
                 
                 console.log(`${appointments.length} agendamentos carregados`);
-                updateAdminDashboard();
-                loadAdminAppointments();
                 generateTimeSlots();
+                if (isAdminAuthenticated) {
+                    updateAdminDashboard();
+                    loadAdminAppointments();
+                }
                 
             } catch (error) {
                 console.error("Erro ao carregar agendamentos:", error);
             }
         }
         
-        // Atualizar status do agendamento
         async function atualizarStatusAgendamento(id, novoStatus) {
             try {
                 await db.collection("agendamentos").doc(id).update({
@@ -637,247 +844,173 @@
                 console.log(`Agendamento ${id} atualizado para ${novoStatus}`);
                 return true;
             } catch (error) {
-                console.error("Erro ao atualizar:", error);
+                console.error("Erro ao atualizar agendamento:", error);
                 return false;
             }
         }
         
-        // Excluir agendamento
-        async function excluirAgendamento(id) {
+        async function fazerLogin(email, senha) {
             try {
-                await db.collection("agendamentos").doc(id).delete();
-                console.log(`Agendamento ${id} excluído`);
-                return true;
+                const userCredential = await auth.signInWithEmailAndPassword(email, senha);
+                currentUser = userCredential.user;
+                isAdminAuthenticated = true;
+                console.log("Login realizado com sucesso:", currentUser.email);
+                return { success: true };
             } catch (error) {
-                console.error("Erro ao excluir:", error);
-                return false;
-            }
-        }
-        
-        // ========== FUNÇÕES DO SISTEMA ==========
-        
-        // Gerar slots de horário disponíveis
-        function generateTimeSlots() {
-            const selectedDate = document.getElementById('appointment-date').value;
-            
-            // Limpar container
-            timeSlotsContainer.innerHTML = '';
-            selectedTimeInput.value = '';
-            
-            // Obter agendamentos para a data selecionada
-            const bookedTimes = appointments
-                .filter(app => app.date === selectedDate)
-                .map(app => app.time);
-            
-            // Gerar botões para cada horário
-            availableTimes.forEach(time => {
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = time;
+                console.error("Erro no login:", error.message);
+                let errorMsg = "Erro ao fazer login. ";
                 
-                // Verificar se o horário está reservado
-                if (bookedTimes.includes(time)) {
-                    timeSlot.classList.add('booked');
-                    timeSlot.title = 'Horário já reservado';
-                } else {
-                    timeSlot.addEventListener('click', function() {
-                        // Remover seleção de todos os slots
-                        document.querySelectorAll('.time-slot').forEach(slot => {
-                            slot.classList.remove('selected');
-                        });
-                        
-                        // Selecionar este slot
-                        this.classList.add('selected');
-                        selectedTimeInput.value = time;
-                    });
+                switch(error.code) {
+                    case 'auth/user-not-found':
+                        errorMsg += "Usuário não encontrado.";
+                        break;
+                    case 'auth/wrong-password':
+                        errorMsg += "Senha incorreta.";
+                        break;
+                    case 'auth/invalid-email':
+                        errorMsg += "Email inválido.";
+                        break;
+                    default:
+                        errorMsg += error.message;
                 }
                 
-                timeSlotsContainer.appendChild(timeSlot);
+                return { success: false, error: errorMsg };
+            }
+        }
+        
+        function fazerLogout() {
+            auth.signOut().then(() => {
+                currentUser = null;
+                isAdminAuthenticated = false;
+                console.log("Logout realizado com sucesso");
+            }).catch(error => {
+                console.error("Erro no logout:", error);
             });
         }
         
-        // Atualizar dashboard administrativo
-        function updateAdminDashboard() {
-            const today = new Date().toISOString().split('T')[0];
-            
-            // Agendamentos de hoje
-            const todayAppointments = appointments.filter(app => app.date === today);
-            totalAppointmentsElement.textContent = todayAppointments.length;
-            
-            // Agendamentos pendentes
-            const pendingAppointments = appointments.filter(app => app.status === 'pending');
-            pendingAppointmentsElement.textContent = pendingAppointments.length;
-            
-            // Total de clientes únicos
-            const uniqueClients = new Set(appointments.map(app => app.clientName)).size;
-            totalClientsElement.textContent = uniqueClients;
-            
-            // Faturamento estimado (considerando apenas os confirmados)
-            const confirmedAppointments = appointments.filter(app => app.status === 'confirmed');
-            let revenue = 0;
-            
-            confirmedAppointments.forEach(app => {
-                revenue += servicePrices[app.service] || 0;
-            });
-            
-            totalRevenueElement.textContent = revenue;
-        }
-        
-        // Carregar agendamentos na área administrativa
-        function loadAdminAppointments() {
-            const filterDate = filterDateInput.value;
-            
-            // Filtrar agendamentos pela data selecionada
-            const filteredAppointments = appointments.filter(app => 
-                !filterDate || app.date === filterDate
-            );
-            
-            // Limpar lista
-            adminAppointmentsList.innerHTML = '';
-            
-            if (filteredAppointments.length === 0) {
-                adminAppointmentsList.innerHTML = '<p class="text-center">Nenhum agendamento encontrado para esta data.</p>';
+        // ========== FUNÇÕES DE INTERFACE ==========
+        async function confirmAppointment(id) {
+            if (!isAdminAuthenticated) {
+                showLoginModal();
                 return;
             }
             
-            // Ordenar por data/horário
-            filteredAppointments.sort((a, b) => {
-                if (a.date === b.date) {
-                    return a.time.localeCompare(b.time);
-                }
-                return a.date.localeCompare(b.date);
-            });
-            
-            // Adicionar cada agendamento à lista
-            filteredAppointments.forEach(appointment => {
-                const appointmentCard = document.createElement('div');
-                appointmentCard.className = 'appointment-card';
-                
-                // Determinar cor do status
-                const statusText = appointment.status === 'confirmed' ? 'Confirmado' : 'Pendente';
-                const statusClass = appointment.status === 'confirmed' ? 'status-confirmed' : 'status-pending';
-                
-                // Formatar data
-                const dateObj = new Date(appointment.date + 'T00:00:00');
-                const formattedDate = dateObj.toLocaleDateString('pt-BR', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // Obter nome do serviço
-                const serviceName = serviceNames[appointment.service] || appointment.service;
-                
-                appointmentCard.innerHTML = `
-                    <div class="appointment-info">
-                        <h4>${appointment.clientName}</h4>
-                        <p><strong>Serviço:</strong> ${serviceName}</p>
-                        <p><strong>Telefone:</strong> ${appointment.phone}</p>
-                        <p><strong>Data:</strong> ${formattedDate}</p>
-                        <span class="appointment-time">${appointment.time}</span>
-                        ${appointment.notes ? `<p class="mt-3"><strong>Observações:</strong> ${appointment.notes}</p>` : ''}
-                    </div>
-                    <div class="appointment-actions">
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                        <button class="btn" onclick="confirmAppointment('${appointment.id}')">Confirmar</button>
-                        <button class="btn btn-secondary" onclick="cancelAppointment('${appointment.id}')">Cancelar</button>
-                    </div>
-                `;
-                
-                adminAppointmentsList.appendChild(appointmentCard);
-            });
-        }
-        
-        // Funções globais para ações administrativas
-        window.confirmAppointment = async function(id) {
             if (await atualizarStatusAgendamento(id, 'confirmed')) {
-                // Atualizar localmente
                 const index = appointments.findIndex(app => app.id === id);
-                if (index !== -1) {
-                    appointments[index].status = 'confirmed';
-                }
+                if (index !== -1) appointments[index].status = 'confirmed';
                 
                 updateAdminDashboard();
                 loadAdminAppointments();
-                alert('Agendamento confirmado com sucesso!');
+                showAlert('Agendamento confirmado com sucesso!', 'success');
             } else {
-                alert('Erro ao confirmar agendamento');
+                showAlert('Erro ao confirmar agendamento', 'error');
             }
-        };
+        }
         
-        window.cancelAppointment = async function(id) {
+        async function cancelAppointment(id) {
+            if (!isAdminAuthenticated) {
+                showLoginModal();
+                return;
+            }
+            
             if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
-                if (await excluirAgendamento(id)) {
-                    // Remover localmente
-                    appointments = appointments.filter(app => app.id !== id);
+                if (await atualizarStatusAgendamento(id, 'cancelled')) {
+                    const index = appointments.findIndex(app => app.id === id);
+                    if (index !== -1) appointments[index].status = 'cancelled';
                     
                     updateAdminDashboard();
                     loadAdminAppointments();
                     generateTimeSlots();
-                    
-                    alert('Agendamento cancelado com sucesso!');
+                    showAlert('Agendamento cancelado com sucesso!', 'success');
                 } else {
-                    alert('Erro ao cancelar agendamento');
+                    showAlert('Erro ao cancelar agendamento', 'error');
                 }
             }
-        };
+        }
         
-        // Configurar listeners de eventos
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+        
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+        
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        function updateAdminUI() {
+            const adminDashboard = document.getElementById('adminDashboard');
+            const loginRequired = document.getElementById('loginRequired');
+            
+            if (isAdminAuthenticated) {
+                if (adminDashboard) adminDashboard.classList.remove('d-none');
+                if (loginRequired) loginRequired.classList.add('d-none');
+                updateAdminDashboard();
+                loadAdminAppointments();
+            } else {
+                if (adminDashboard) adminDashboard.classList.add('d-none');
+                if (loginRequired) loginRequired.classList.remove('d-none');
+            }
+        }
+        
+        // ========== EVENT LISTENERS ==========
         function setupEventListeners() {
             // Navegação entre abas
-            tabs.forEach(tab => {
+            document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function() {
                     const tabId = this.getAttribute('data-tab');
                     
-                    // Remover classe active de todas as abas
-                    tabs.forEach(t => t.classList.remove('active'));
-                    
-                    // Adicionar classe active à aba clicada
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Mostrar conteúdo correspondente
-                    if (tabId === 'client') {
-                        clientTab.classList.add('active');
-                        adminTab.classList.remove('active');
-                    } else {
-                        adminTab.classList.add('active');
-                        clientTab.classList.remove('active');
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    if (tabId === 'admin' && !isAdminAuthenticated) {
+                        updateAdminUI();
                     }
                 });
             });
             
             // Envio do formulário de agendamento
-            bookingForm.addEventListener('submit', async function(e) {
+            document.getElementById('booking-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                // Coletar dados do formulário
                 const agendamento = {
                     clientName: document.getElementById('client-name').value,
                     phone: document.getElementById('client-phone').value,
                     service: document.getElementById('service-type').value,
                     date: document.getElementById('appointment-date').value,
-                    time: selectedTimeInput.value,
+                    time: document.getElementById('selected-time').value,
                     notes: document.getElementById('notes').value
                 };
                 
-                // Validar horário selecionado
                 if (!agendamento.time) {
-                    alert('Por favor, selecione um horário disponível.');
+                    showAlert('Por favor, selecione um horário disponível.', 'error');
                     return;
                 }
                 
-                // Validar serviço selecionado
                 if (!agendamento.service) {
-                    alert('Por favor, selecione um serviço.');
+                    showAlert('Por favor, selecione um serviço.', 'error');
                     return;
                 }
                 
-                // Salvar no Firestore
                 const resultado = await salvarAgendamentoNoFirestore(agendamento);
                 
                 if (resultado.success) {
-                    // Adicionar à lista local
                     appointments.push({
                         id: resultado.id,
                         ...agendamento,
@@ -885,181 +1018,109 @@
                         criadoEm: new Date()
                     });
                     
-                    // Mostrar mensagem de sucesso
-                    successMessage.classList.remove('d-none');
-                    
-                    // Limpar formulário
-                    bookingForm.reset();
+                    document.getElementById('success-message').classList.remove('d-none');
+                    this.reset();
+                    const today = new Date().toISOString().split('T')[0];
                     document.getElementById('appointment-date').value = today;
-                    selectedTimeInput.value = '';
+                    document.getElementById('selected-time').value = '';
                     
-                    // Atualizar slots e dashboard
                     generateTimeSlots();
-                    updateAdminDashboard();
-                    
-                    // Rolar para o topo
                     window.scrollTo(0, 0);
                     
-                    // Esconder mensagem após 5 segundos
                     setTimeout(() => {
-                        successMessage.classList.add('d-none');
+                        document.getElementById('success-message').classList.add('d-none');
                     }, 5000);
                 } else {
-                    alert('Erro ao salvar agendamento: ' + resultado.error);
+                    showAlert('Erro ao salvar agendamento: ' + resultado.error, 'error');
                 }
             });
             
             // Filtro de data na área administrativa
-            filterDateInput.addEventListener('change', function() {
-                loadAdminAppointments();
+            document.getElementById('filter-date').addEventListener('change', function() {
+                if (isAdminAuthenticated) loadAdminAppointments();
             });
             
             // Botão de logout
-            logoutBtn.addEventListener('click', function() {
-                // Voltar para a aba do cliente
-                tabs[0].click();
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                fazerLogout();
+                isAdminAuthenticated = false;
+                updateAdminUI();
+                document.querySelector('.tab[data-tab="client"]').click();
+                showAlert('Logout realizado com sucesso!', 'success');
+            });
+            
+            // Botões para abrir modal de login
+            document.getElementById('openLoginModal').addEventListener('click', showLoginModal);
+            document.getElementById('adminAccessLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                showLoginModal();
+            });
+            
+            // Formulário de login
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const loginError = document.getElementById('loginError');
+                
+                const resultado = await fazerLogin(email, password);
+                
+                if (resultado.success) {
+                    hideLoginModal();
+                    isAdminAuthenticated = true;
+                    updateAdminUI();
+                    showAlert('Login realizado com sucesso!', 'success');
+                } else {
+                    loginError.textContent = resultado.error;
+                    loginError.style.display = 'block';
+                }
+            });
+            
+            // Botão para fechar modal
+            document.getElementById('closeModal').addEventListener('click', hideLoginModal);
+            
+            // Fechar modal ao clicar fora
+            document.getElementById('loginModal').addEventListener('click', function(e) {
+                if (e.target === this) hideLoginModal();
             });
             
             // Mudança de data no agendamento
-            document.getElementById('appointment-date').addEventListener('change', function() {
-                generateTimeSlots();
-            });
+            document.getElementById('appointment-date').addEventListener('change', generateTimeSlots);
         }
         
         // ========== INICIALIZAÇÃO ==========
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar se usuário já está logado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar data atual
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointment-date').min = today;
+            document.getElementById('appointment-date').value = today;
+            document.getElementById('filter-date').value = today;
+            
+            // Configurar ano atual no footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            // Inicializar Firebase auth state observer
             auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                isAdminAuthenticated = !!user;
+                
                 if (user) {
-                    currentUser = user;
-                    console.log("Usuário logado:", user.email);
+                    console.log("Usuário autenticado:", user.email);
                     carregarAgendamentosDoBanco();
                 } else {
-                    console.log("Nenhum usuário logado");
-                    // Tentar login automático para facilitar testes
-                    loginAutomatico();
+                    console.log("Nenhum usuário autenticado");
                 }
+                
+                updateAdminUI();
             });
             
             // Configurar eventos
             setupEventListeners();
             
-            // Gerar horários disponíveis
-            generateTimeSlots();
-            
             // Carregar dados iniciais
-            updateAdminDashboard();
-            loadAdminAppointments();
+            carregarAgendamentosDoBanco();
         });
-
-        // ========== FUNÇÕES DE DEBUG ==========
-
-// // Testar conexão com Firebase
-// async function testarConexaoFirebase() {
-//     try {
-//         console.log("🔄 Testando conexão com Firebase...");
-        
-//         // Tentar uma operação simples
-//         const timestamp = firebase.firestore.Timestamp.now();
-//         console.log("✅ Firebase inicializado, timestamp:", timestamp);
-        
-//         // Testar Firestore
-//         const testRef = db.collection("teste_conexao").doc("teste");
-//         await testRef.set({
-//             teste: "conexao_ok",
-//             timestamp: timestamp
-//         });
-//         console.log("✅ Firestore funcionando - documento criado");
-        
-//         // Ler para confirmar
-//         const doc = await testRef.get();
-//         console.log("✅ Firestore leitura ok - dados:", doc.data());
-        
-//         return true;
-//     } catch (error) {
-//         console.error("❌ ERRO na conexão Firebase:", error);
-//         alert("ERRO de conexão: " + error.message);
-//         return false;
-//     }
-// }
-
-// // Testar autenticação
-// async function testarAutenticacao() {
-//     try {
-//         console.log("🔄 Testando autenticação...");
-        
-//         // Tentar login
-//         const userCredential = await auth.signInWithEmailAndPassword(
-//             "flavia@studio.com", 
-//             "senha123"
-//         );
-        
-//         console.log("✅ Autenticação OK - Usuário:", userCredential.user.email);
-//         currentUser = userCredential.user;
-//         return true;
-//     } catch (error) {
-//         console.error("❌ ERRO na autenticação:", error.message);
-        
-//         // Se erro for "user-not-found", criar usuário
-//         if (error.code === 'auth/user-not-found') {
-//             console.log("⚠️ Usuário não encontrado, tentando criar...");
-//             try {
-//                 const userCredential = await auth.createUserWithEmailAndPassword(
-//                     "flavia@studio.com", 
-//                     "senha123"
-//                 );
-//                 console.log("✅ Usuário criado com sucesso!");
-//                 currentUser = userCredential.user;
-//                 return true;
-//             } catch (createError) {
-//                 console.error("❌ ERRO ao criar usuário:", createError.message);
-//             }
-//         }
-        
-//         return false;
-//     }
-// }
-
-// // ========== INICIALIZAÇÃO ATUALIZADA ==========
-// document.addEventListener('DOMContentLoaded', async function() {
-//     console.log("🚀 Sistema iniciando...");
-    
-//     // 1. Testar conexão Firebase
-//     const conexaoOk = await testarConexaoFirebase();
-//     if (!conexaoOk) {
-//         alert("Falha na conexão com Firebase. Verifique o console (F12) para detalhes.");
-//         return;
-//     }
-    
-//     // 2. Testar/Criar autenticação
-//     const authOk = await testarAutenticacao();
-//     if (!authOk) {
-//         console.warn("⚠️ Autenticação falhou, continuando em modo leitura...");
-//     }
-    
-//     // 3. Configurar estado de autenticação
-//     auth.onAuthStateChanged((user) => {
-//         if (user) {
-//             currentUser = user;
-//             console.log("✅ Usuário autenticado:", user.email);
-//             carregarAgendamentosDoBanco();
-//         } else {
-//             console.log("ℹ️ Nenhum usuário autenticado");
-//             // Tentar login automático
-//             loginAutomatico();
-//         }
-//     });
-    
-//     // 4. Configurar eventos
-//     setupEventListeners();
-    
-//     // 5. Carregar dados iniciais
-//     generateTimeSlots();
-//     updateAdminDashboard();
-//     loadAdminAppointments();
-    
-//     console.log("✅ Sistema inicializado com sucesso!");
-// });
     </script>
 </body>
 </html>
